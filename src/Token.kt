@@ -1,14 +1,7 @@
 /*
- * E -> E + T
- * E -> E - T
- * E -> T 
- *
- * T -> T * F 
- * T -> T / F 
- * T -> F 
- *
- *  F -> integer
- *  F -> ( E )
+ * E -> T ('+' | '-' T)*
+ * T -> F ('*' | '/' F)*
+ * F -> integer | '(' E ')'
  */ 
 
 enum class TokenType {
@@ -18,7 +11,8 @@ enum class TokenType {
   STAR,
   SLASH,
   OPEN_PARENTHESIS,
-  CLOSE_PARENTHESIS
+  CLOSE_PARENTHESIS,
+  END_OF_FILE,
 }
 
 data class Token(

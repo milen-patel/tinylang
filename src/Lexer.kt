@@ -13,10 +13,12 @@ class Lexer(val input: String) {
     return currentPosition >= input.length;
   }
 
+  // Top level function for taking the input and finding all of the tokens, handling whitespace
   fun scanTokens(): List<Token> {
       while (!isAtEnd()) {
         scanNextToken()
       }
+      tokens.add(Token(TokenType.END_OF_FILE))
       return tokens;
   }
 

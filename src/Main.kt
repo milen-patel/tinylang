@@ -1,7 +1,8 @@
 fun main(args: Array<String>) {
-    val source : String = "6 + (4*2)/5 - 3*(4+(4*4 +5))";
+    //val source : String = "6 + (4*2)/5 - 3*(4+(4*4 +5))";
     //val source : String = "+++++";
     //val source: String = "1+2+3+4"
+    val source: String = "8 + 6 * 3 - (10 / 2 + 4) * 2"
     println("Source = $source")
     println("====")
 
@@ -15,6 +16,10 @@ fun main(args: Array<String>) {
     val instructions: List<Instruction> = Compiler(shouldLog = false).compile(expression)
     println("=========")
     instructions.forEach { instruction: Instruction -> println(instruction) }
+
+    val finalStack: List<Int> = Machine().run(instructions)
+    println("=========")
+    println("Final stack = $finalStack")
 }
 
 fun prettyPrint(expr: Expr, indent: Int) {

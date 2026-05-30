@@ -4,12 +4,11 @@
  * F -> integer | '(' E ')'
  */ 
 
-class Parser(private val tokens: List<Token>) {
-  private val enableTracing: Boolean = false
+class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
   private var currentPosition: Int = 0
 
   fun log(stmt: String) {
-    if (enableTracing) {
+    if (shouldLog) {
       println(stmt)
     }
   }

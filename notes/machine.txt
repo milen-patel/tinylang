@@ -1,0 +1,67 @@
+= Our project ===
+
+Stack Based Computer"
+push -> Put a new value on the top of the Stack
+pop -> if the stack is nonempty, it will take the top item off of the stack
+
+b 
+a 
+stack base
+
+Instruction Stack
+PUSH_INT [arg] -> Pushes the parameter to the top of the stack, where the parameter is an integer literal
+ADD -> Pop the top two items from the stack, add them, and push result back onto the stack (a+b == b+a)
+SUB -> Pop the top two items from the stack, subtract them, and push result back onto the stack (a-b)
+MUL -> Pop the top two items from the stack, multiply them, and push result back onto the stack (a+b == b+a)
+DIV -> Pop the top two items from the stack, divide them, and push result back onto the stack (a/b)
+
+
+
+1 - 2
+PUSH_INT 1
+PUSH_INT 2
+SUB
+Remark: We push the left operand to the stack, then push the right operand, then evaluate
+
+3 + 5 - 4
+
+      - 
+    /    \
+   +     4
+   /\
+   3 5
+
+PUSH_INT 3
+PUSH_INT 5
+ADD
+PUSH_INT 4
+SUB
+
+
+Claim: 
+Emit the instructions that would evaluate the left hand side of tree 
+Then emit the instructions that would evaluate the right hand side of tree 
+Then, emit the instruction associated with the operator itself (ADD,SUB,MUL,DIV)
+
+Binary(MINUS)
+    Binary(PLUS)
+        Number(6)
+        Binary(SLASH)
+           Binary(STAR)
+                Number(4)
+                Number(2)
+            Number(5)
+    Number(3)
+
+
+PUSH_INT 6
+PUSH_INT 4 
+PUSH_INT 2
+MUL
+PUSH_INT 5
+DIV
+ADD
+PUSH_INT 3
+SUB
+
+4.6

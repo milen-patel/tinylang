@@ -1,5 +1,6 @@
 class Machine {
   private val stack: MutableList<Int> = mutableListOf()
+  private val locals: MutableList<Int?> = mutableListOf()
 
   fun run(instructions: List<Instruction>): List<Int> {
     for (instruction in instructions) {
@@ -31,9 +32,8 @@ class Machine {
         val left = pop()
         stack.add(left / right)
       }
-      else -> {
-        // TODO
-      }
+      is Instruction.StoreLocal -> storeLocal(instruction.slot, pop())
+      is Instruction.LoadLocal -> stack.add(loadLocal(instruction.slot))
     }
   }
 
@@ -42,5 +42,19 @@ class Machine {
       error("Stack underflow")
     }
     return stack.removeAt(stack.lastIndex)
+  }
+
+  private fun storeLocal(slot: Int, value: Int) {
+    while (locals.size <= slot) {
+      locals.add(null)
+    }
+    locals[slot] = value
+  }
+
+  private fun loadLocal(slot: Int): Int {
+    if (slot >= locals.size || locals[slot] == null) {
+      error("Undefined local slot $slot")
+    }
+    return locals[slot]!!
   }
 }

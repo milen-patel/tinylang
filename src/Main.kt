@@ -17,11 +17,9 @@ fun main(args: Array<String>) {
     println("=========")
     instructions.forEach { instruction: Instruction -> println(instruction) }
 
-    /*
     val finalStack: List<Int> = Machine().run(instructions)
     println("=========")
     println("Final stack = $finalStack")
-    */
 }
 
 fun prettyPrint(stmt: Stmt, indent: Int) { 

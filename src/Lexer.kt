@@ -37,9 +37,26 @@ class Lexer(val input: String) {
     tokens.add(Token(TokenType.NUMBER, input.substring(startingPositionOfNumber, currentPosition)))
   }
 
+  private fun scanIdentifier() {
+    val startingPosition: Int = currentPosition - 1
+    while (peek().isLetter()) {
+        advance()
+    }
+    val literal: String = input.substring(startingPosition, currentPosition)
+    if (literal == "let") {
+      tokens.add(Token(TokenType.LET))
+    } else {
+      tokens.add(Token(TokenType.IDENTIFIER, literal))
+    }
+  }
+
   private fun scanNextToken() {
     val currentCharacter: Char = advance()
-    if (currentCharacter == '(') {
+    if (currentCharacter == '=') {
+      tokens.add(Token(TokenType.EQUAL))
+    } else if (currentCharacter == ';') {
+      tokens.add(Token(TokenType.SEMICOLON))
+    } else if (currentCharacter == '(') {
       tokens.add(Token(TokenType.OPEN_PARENTHESIS))
     } else if (currentCharacter == ')') {
       tokens.add(Token(TokenType.CLOSE_PARENTHESIS))
@@ -55,6 +72,8 @@ class Lexer(val input: String) {
       scanNumber()
     } else if (currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\t' || currentCharacter == '\r') {
       // Ignore white space
+    } else if (currentCharacter.isLetter()) {
+      scanIdentifier()
     } else {
       error("Unexpected token: $currentCharacter")
     }

@@ -1,7 +1,14 @@
 /*
- * E -> T ('+' | '-' T)*
- * T -> F ('*' | '/' F)*
- * F -> integer | '(' E ')'
+ * expression -> term ('+' | '-' term)*
+ * term -> factor ('*' | '/' factor)*
+ * factor -> integer | '(' expression ')' | identifier
+ *
+ * program -> statement* 
+ * statement -> "let" identifier "=" expression ';' | expression ';'
+ * identifier -> [a-z][a-z]*
+ *
+ * Start symbol = statement
+ * 
  */ 
 
 class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
@@ -13,14 +20,37 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     }
   }
 
-  fun parse(): Expr {
+  fun parse(): List<Stmt> {
     log("parse() Top level public parse function called")
-    val expression: Expr = parseExpression()
+    val statements: MutableList<Stmt> = mutableListOf()
+    while (!isAtEnd()) {
+      statements.add(parseStatement())
+    }
 
     log("parse() done parsing expression, verifying EOF exists")
     consume(TokenType.END_OF_FILE, "Expected EOF to terminate the program")
 
-    return expression
+    return statements
+  }
+
+  private fun parseStatement(): Stmt {
+    if (match(TokenType.LET)) {
+      return parseVarDeclaration()
+    }
+    return parseExpressionStatment()
+  }
+
+  private fun parseVarDeclaration(): Stmt {
+    val name: String = consume(TokenType.IDENTIFIER, "Expect a name for a variable declaration").literal
+    consume(TokenType.EQUAL, "Expected = sign after variable name")
+    val initializer: Expr = parseExpression()
+    consume(TokenType.SEMICOLON, "Expected ; following variable declaration")
+    return Stmt.VarDeclaration(name, initializer)
+  }
+  private fun parseExpressionStatment(): Stmt {
+    val expression: Expr = parseExpression()
+    consume(TokenType.SEMICOLON, "Expected ; following expression statement")
+    return Stmt.ExpressionStmt(expression)
   }
 
   private fun parseExpression(): Expr {
@@ -67,6 +97,11 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
       log("parseFactor() done parsing expression, checking for close parenthesis")
       consume(TokenType.CLOSE_PARENTHESIS, "Failed to parse a factor, expected ) following (") 
       return parsedExpression
+    }
+
+    // Case 3: identifier
+    if (match(TokenType.IDENTIFIER)) {
+      return Expr.Variable(previous().literal)
     }
 
     error("Unable to parse factor, expected a number or open parenthesis")

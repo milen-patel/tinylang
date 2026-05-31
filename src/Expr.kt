@@ -5,4 +5,5 @@ sealed class Expr {
     val operator: Token, 
     val right: Expr,
   ) : Expr()
+  data class Variable(val name: String): Expr()
 }

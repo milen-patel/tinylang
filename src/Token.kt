@@ -1,9 +1,3 @@
-/*
- * E -> T ('+' | '-' T)*
- * T -> F ('*' | '/' F)*
- * F -> integer | '(' E ')'
- */ 
-
 enum class TokenType {
   NUMBER,
   PLUS,
@@ -13,6 +7,10 @@ enum class TokenType {
   OPEN_PARENTHESIS,
   CLOSE_PARENTHESIS,
   END_OF_FILE,
+  LET,
+  IDENTIFIER,
+  EQUAL,
+  SEMICOLON,
 }
 
 data class Token(

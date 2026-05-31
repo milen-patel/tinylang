@@ -1,4 +1,6 @@
 class Compiler(val shouldLog: Boolean = true) {
+  private val locals: MutableMap<String, Int>  = mutableMapOf()
+  private var nextLocalSlot: Int = 0
 
   fun log(stmt: String) {
     if (shouldLog) {
@@ -6,15 +8,35 @@ class Compiler(val shouldLog: Boolean = true) {
     }
   }
 
-  fun compile(expr: Expr): List<Instruction> {
+  fun compile(statements: List<Stmt>): List<Instruction> {
     log("Top level compile function called")
     val instructions: MutableList<Instruction> = mutableListOf()
-    emit(expr, instructions)
+    statements.forEach { statement: Stmt -> emit(statement, instructions) }
     return instructions
   }
 
 
   private var nextUniqueNumber: Int = 1
+
+  private fun emit(stmt: Stmt, instructions: MutableList<Instruction>) {
+    when (stmt) {
+      is Stmt.ExpressionStmt -> {
+          emit(stmt.expression, instructions)
+      }
+      is Stmt.VarDeclaration -> {
+          if (locals.containsKey(stmt.name)) {
+            error("Duplicate definition of variable detected ${stmt.name}")
+          }
+          emit(stmt.initializer, instructions)
+          val slot: Int = nextLocalSlot
+          nextLocalSlot = nextLocalSlot + 1
+          locals[stmt.name] = slot
+          instructions.add(Instruction.StoreLocal(slot))
+      }
+    }
+
+
+  }
   private fun emit(expr: Expr, instructions: MutableList<Instruction>) {
     val logId: Int = nextUniqueNumber
     nextUniqueNumber = nextUniqueNumber + 1
@@ -34,6 +56,13 @@ class Compiler(val shouldLog: Boolean = true) {
           log("[$logId] Now adding binary operator ${instructionForOperator(expr.operator)}")
           instructions.add(instructionForOperator(expr.operator))
 
+      }
+      is Expr.Variable -> {
+        val slot: Int? = locals[expr.name]
+        if (slot == null) {
+          error("Referencing undefined variable ${expr.name}")
+        }
+        instructions.add(Instruction.LoadLocal(slot))
       }
     }
 

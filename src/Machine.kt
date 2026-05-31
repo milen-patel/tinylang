@@ -31,6 +31,9 @@ class Machine {
         val left = pop()
         stack.add(left / right)
       }
+      else -> {
+        // TODO
+      }
     }
   }
 

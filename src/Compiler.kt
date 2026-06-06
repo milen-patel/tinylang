@@ -41,6 +41,21 @@ class Compiler(val shouldLog: Boolean = true) {
           emit(stmt.value, instructions)
           instructions.add(Instruction.StoreLocal(slot))
       }
+    /*
+     * instructions before the if statement
+     * instructions nededed to evaluate the condition of the if statement
+     * jump if false instruction 
+     * instructions for each statement in the body of the if-statement {..}
+     * target jump location
+     */
+      is Stmt.IfStmt -> {
+        emit(stmt.condition, instructions)
+        val jumpInstructionIndex: Int = instructions.size
+        instructions.add(Instruction.JumpIfFalse(999))
+        stmt.body.forEach { bodyStatement: Stmt -> emit(bodyStatement, instructions) }
+        val realJumpLocation: Int = instructions.size
+        instructions[jumpInstructionIndex] = Instruction.JumpIfFalse(realJumpLocation)
+      }
     }
 
 

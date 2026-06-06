@@ -7,7 +7,8 @@
  * program -> statement* 
  * statement ->  "let" identifier "=" expression ";" | 
  *                cexpression ";" |
- *                "update" identifier "to" expression ";"
+ *                "update" identifier "to" expression ";" | 
+ *                "if" "(" cexpression ")" "{" statement* "}" ";"
  * identifier -> [a-z][a-z]*
  *
  * Start symbol = statement
@@ -42,8 +43,26 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     if (match(TokenType.UPDATE)) {
         return parseVarUpdate()
     }
+    if (match(TokenType.IF)) {
+      return parseIfStatement()
+    }
     return parseExpressionStatment()
   }
+
+  private fun parseIfStatement(): Stmt {
+    consume(TokenType.OPEN_PARENTHESIS, "Expected ( after if")
+    val condition: Expr = parseCExpression()
+    consume(TokenType.CLOSE_PARENTHESIS, "Expected ) after if")
+    consume(TokenType.OPEN_BRACE, "Expected { after )")
+    val body: MutableList<Stmt> = mutableListOf()
+    while (!check(TokenType.CLOSE_BRACE) && !isAtEnd()) {
+      body.add(parseStatement())
+    }
+    consume(TokenType.CLOSE_BRACE, "Expected } to end if statement body")
+    consume(TokenType.SEMICOLON, "Expected ; to end if statement")
+    return Stmt.IfStmt(condition, body)
+  }
+ 
 
   private fun parseVarUpdate(): Stmt {
       val name: String = consume(TokenType.IDENTIFIER, "must specify variable name to update").literal

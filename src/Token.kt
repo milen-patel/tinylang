@@ -15,6 +15,9 @@ enum class TokenType {
   TO,
   LESS_THAN,
   GREATER_THAN,
+  OPEN_BRACE,
+  CLOSE_BRACE,
+  IF
 }
 
 data class Token(

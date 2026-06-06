@@ -3,13 +3,15 @@ class Machine {
   private val locals: MutableList<Int?> = mutableListOf()
 
   fun run(instructions: List<Instruction>): List<Int> {
-    for (instruction in instructions) {
-      execute(instruction)
+    var instructionPointer: Int = 0
+    while (instructionPointer < instructions.size) {
+      val nextInstructionPointer: Int? = execute(instructions[instructionPointer])
+      instructionPointer = nextInstructionPointer ?: instructionPointer + 1
     }
     return stack.toList()
   }
 
-  private fun execute(instruction: Instruction) {
+  private fun execute(instruction: Instruction): Int? {
     when (instruction) {
       is Instruction.PushInt -> stack.add(instruction.value)
       Instruction.Add -> {
@@ -44,7 +46,14 @@ class Machine {
       }
       is Instruction.StoreLocal -> storeLocal(instruction.slot, pop())
       is Instruction.LoadLocal -> stack.add(loadLocal(instruction.slot))
+      is Instruction.JumpIfFalse -> {
+        val condition = pop()
+        if (condition == 0) {
+          return instruction.target
+        }
+      }
     }
+    return null
   }
 
   private fun pop(): Int {

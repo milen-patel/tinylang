@@ -2,7 +2,7 @@ fun main(args: Array<String>) {
     //val source : String = "6 + (4*2)/5 - 3*(4+(4*4 +5))";
     //val source : String = "+++++";
     //val source: String = "1+2+3+4"
-    val source: String = "let x = 5*2; let y=1; x+y;"
+    val source: String = "let x = 5*2; update x to x * 2; update x to x + 1; x;"
     println("Source = $source")
     println("====")
 
@@ -33,6 +33,10 @@ fun prettyPrint(stmt: Stmt, indent: Int) {
     is Stmt.ExpressionStmt -> {
         println("${padding}ExpressionStmt")
         prettyPrint(stmt.expression, indent + 1)
+    }
+    is Stmt.VarUpdate -> {
+        println("${padding}VarUpdate name ${stmt.name}")
+        prettyPrint(stmt.value, indent + 1)
     }
   }
 } 

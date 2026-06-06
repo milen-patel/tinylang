@@ -4,7 +4,9 @@
  * factor -> integer | '(' expression ')' | identifier
  *
  * program -> statement* 
- * statement -> "let" identifier "=" expression ';' | expression ';'
+ * statement ->  "let" identifier "=" expression ";" | 
+ *                expression ";" |
+ *                "update" identifier "to" expression ";"
  * identifier -> [a-z][a-z]*
  *
  * Start symbol = statement
@@ -37,7 +39,18 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     if (match(TokenType.LET)) {
       return parseVarDeclaration()
     }
+    if (match(TokenType.UPDATE)) {
+        return parseVarUpdate()
+    }
     return parseExpressionStatment()
+  }
+
+  private fun parseVarUpdate(): Stmt {
+      val name: String = consume(TokenType.IDENTIFIER, "must specify variable name to update").literal
+      consume(TokenType.TO, "Expected literal 'to'")
+      val value: Expr = parseExpression()
+      consume(TokenType.SEMICOLON, "Expected semicolon to end statement")
+      return Stmt.VarUpdate(name, value)
   }
 
   private fun parseVarDeclaration(): Stmt {

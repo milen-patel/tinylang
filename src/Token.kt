@@ -11,6 +11,8 @@ enum class TokenType {
   IDENTIFIER,
   EQUAL,
   SEMICOLON,
+  UPDATE,
+  TO
 }
 
 data class Token(

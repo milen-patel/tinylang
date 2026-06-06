@@ -45,6 +45,10 @@ class Lexer(val input: String) {
     val literal: String = input.substring(startingPosition, currentPosition)
     if (literal == "let") {
       tokens.add(Token(TokenType.LET))
+    } else if (literal == "update") {
+      tokens.add(Token(TokenType.UPDATE))
+    } else if (literal == "to") {
+      tokens.add(Token(TokenType.TO))
     } else {
       tokens.add(Token(TokenType.IDENTIFIER, literal))
     }

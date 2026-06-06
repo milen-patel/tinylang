@@ -33,6 +33,14 @@ class Compiler(val shouldLog: Boolean = true) {
           locals[stmt.name] = slot
           instructions.add(Instruction.StoreLocal(slot))
       }
+      is Stmt.VarUpdate -> {
+          val slot: Int? = locals[stmt.name]
+          if (slot == null) {
+            error("Failed to update a variable with ${stmt.name} as name before declaration")
+          }
+          emit(stmt.value, instructions)
+          instructions.add(Instruction.StoreLocal(slot))
+      }
     }
 
 

@@ -2,7 +2,8 @@ fun main(args: Array<String>) {
     //val source : String = "6 + (4*2)/5 - 3*(4+(4*4 +5))";
     //val source : String = "+++++";
     //val source: String = "1+2+3+4"
-    val source: String = "let x = 5*2; update x to x * 2; update x to x + 1; x;"
+    //val source: String = "let x = 5*2; update x to x * 2; update x to x + 1; x;"
+    val source: String = "let x = 5 < 4;"
     println("Source = $source")
     println("====")
 

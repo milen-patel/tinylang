@@ -12,7 +12,9 @@ enum class TokenType {
   EQUAL,
   SEMICOLON,
   UPDATE,
-  TO
+  TO,
+  LESS_THAN,
+  GREATER_THAN,
 }
 
 data class Token(

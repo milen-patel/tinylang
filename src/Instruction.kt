@@ -12,6 +12,12 @@ sealed class Instruction {
     object Div : Instruction() {
         override fun toString(): String = "Div"
     }
+    object LessThan : Instruction() {
+        override fun toString(): String = "LessThan"
+    }
+    object GreaterThan : Instruction() {
+        override fun toString(): String = "GreaterThan"
+    }
     data class LoadLocal(val slot: Int): Instruction()
     data class StoreLocal(val slot: Int): Instruction()
 }

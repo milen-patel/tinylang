@@ -1,16 +1,16 @@
 /*
+ * cexpression -> expression (("<" | ">") expression)?
  * expression -> term ('+' | '-' term)*
  * term -> factor ('*' | '/' factor)*
  * factor -> integer | '(' expression ')' | identifier
  *
  * program -> statement* 
  * statement ->  "let" identifier "=" expression ";" | 
- *                expression ";" |
+ *                cexpression ";" |
  *                "update" identifier "to" expression ";"
  * identifier -> [a-z][a-z]*
  *
  * Start symbol = statement
- * 
  */ 
 
 class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
@@ -61,9 +61,19 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     return Stmt.VarDeclaration(name, initializer)
   }
   private fun parseExpressionStatment(): Stmt {
-    val expression: Expr = parseExpression()
+    val expression: Expr = parseCExpression()
     consume(TokenType.SEMICOLON, "Expected ; following expression statement")
     return Stmt.ExpressionStmt(expression)
+  }
+
+  private fun parseCExpression(): Expr {
+    var workingExpression: Expr = parseExpression()
+    if (match(TokenType.LESS_THAN, TokenType.GREATER_THAN)) {
+      val operator: Token = previous()
+      val parsedExpression: Expr = parseExpression()
+      workingExpression = Expr.Binary(workingExpression, operator, parsedExpression)
+    }
+    return workingExpression
   }
 
   private fun parseExpression(): Expr {

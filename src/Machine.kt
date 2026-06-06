@@ -32,6 +32,16 @@ class Machine {
         val left = pop()
         stack.add(left / right)
       }
+      Instruction.LessThan -> {
+        val right = pop()
+        val left = pop()
+        stack.add(if (left < right) 1 else 0)
+      }
+      Instruction.GreaterThan -> {
+        val right = pop()
+        val left = pop()
+        stack.add(if (left > right) 1 else 0)
+      }
       is Instruction.StoreLocal -> storeLocal(instruction.slot, pop())
       is Instruction.LoadLocal -> stack.add(loadLocal(instruction.slot))
     }

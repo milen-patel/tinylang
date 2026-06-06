@@ -82,6 +82,8 @@ class Compiler(val shouldLog: Boolean = true) {
         TokenType.MINUS -> Instruction.Sub
         TokenType.STAR -> Instruction.Mul
         TokenType.SLASH -> Instruction.Div
+        TokenType.LESS_THAN -> Instruction.LessThan
+        TokenType.GREATER_THAN -> Instruction.GreaterThan
         else -> error("Invalid operator $operator")
     }
   }

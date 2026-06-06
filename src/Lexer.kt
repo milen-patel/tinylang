@@ -72,6 +72,10 @@ class Lexer(val input: String) {
       tokens.add(Token(TokenType.STAR))
     } else if (currentCharacter == '/') {
       tokens.add(Token(TokenType.SLASH))
+    } else if (currentCharacter == '<') {
+      tokens.add(Token(TokenType.LESS_THAN))
+    } else if (currentCharacter == '>') { 
+      tokens.add(Token(TokenType.GREATER_THAN))
     } else if (currentCharacter.isDigit()) {
       scanNumber()
     } else if (currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\t' || currentCharacter == '\r') {

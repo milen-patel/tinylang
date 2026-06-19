@@ -1,27 +1,36 @@
 class Machine {
+  private data class CallFrame(
+    val returnAddress: Int,
+    val locals: MutableList<Int?>,
+  )
+
   private val stack: MutableList<Int> = mutableListOf()
-  private val locals: MutableList<Int?> = mutableListOf()
-  private val functions: MutableMap<String, FunctionDefinition> = mutableMapOf()
+  private val callStack: MutableList<CallFrame> = mutableListOf()
 
-  fun run(instructions: List<Instruction>, functionDefinitions: Map<String, FunctionDefinition> = emptyMap()): List<Int> {
-    functions.clear()
-    functions.putAll(functionDefinitions)
-    return runWithLocals(instructions, locals)
-  }
-
-  private fun runWithLocals(instructions: List<Instruction>, activeLocals: MutableList<Int?>): List<Int> {
+  fun run(instructions: List<Instruction>): List<Int> {
+    stack.clear()
+    callStack.clear()
+    var activeLocals: MutableList<Int?> = mutableListOf()
     var instructionPointer: Int = 0
     while (instructionPointer < instructions.size) {
-      if (instructions[instructionPointer] == Instruction.Return) {
-        return stack.toList()
+      val nextInstructionPointer: Int? = execute(
+        instructions[instructionPointer],
+        activeLocals,
+        instructionPointer + 1,
+      ) { restoredLocals: MutableList<Int?> ->
+        activeLocals = restoredLocals
       }
-      val nextInstructionPointer: Int? = execute(instructions[instructionPointer], activeLocals)
       instructionPointer = nextInstructionPointer ?: instructionPointer + 1
     }
     return stack.toList()
   }
 
-  private fun execute(instruction: Instruction, activeLocals: MutableList<Int?>): Int? {
+  private fun execute(
+    instruction: Instruction,
+    activeLocals: MutableList<Int?>,
+    nextInstructionPointer: Int,
+    restoreLocals: (MutableList<Int?>) -> Unit,
+  ): Int? {
     when (instruction) {
       is Instruction.PushInt -> stack.add(instruction.value)
       Instruction.Add -> {
@@ -56,14 +65,27 @@ class Machine {
       }
       is Instruction.StoreLocal -> storeLocal(activeLocals, instruction.slot, pop())
       is Instruction.LoadLocal -> stack.add(loadLocal(activeLocals, instruction.slot))
+      is Instruction.Jump -> return instruction.target
       is Instruction.JumpIfFalse -> {
         val condition = pop()
         if (condition == 0) {
           return instruction.target
         }
       }
-      is Instruction.CallFunction -> callFunction(instruction)
-      Instruction.Return -> error("Return instruction should be handled by the instruction loop")
+      is Instruction.CallFunction -> {
+        val callLocals: MutableList<Int?> = createFunctionLocals(instruction.arity)
+        callStack.add(CallFrame(nextInstructionPointer, activeLocals))
+        restoreLocals(callLocals)
+        return instruction.address
+      }
+      Instruction.Return -> {
+        if (callStack.isEmpty()) {
+          return null
+        }
+        val frame: CallFrame = callStack.removeAt(callStack.lastIndex)
+        restoreLocals(frame.locals)
+        return frame.returnAddress
+      }
     }
     return null
   }
@@ -89,16 +111,10 @@ class Machine {
     return activeLocals[slot]!!
   }
 
-  private fun callFunction(instruction: Instruction.CallFunction) {
-    val function: FunctionDefinition = functions[instruction.name]
-      ?: error("Undefined function ${instruction.name}")
-    if (function.parameters.size != instruction.arity) {
-      error("Function ${instruction.name} expects ${function.parameters.size} arguments but got ${instruction.arity}")
-    }
-
+  private fun createFunctionLocals(arity: Int): MutableList<Int?> {
     val callLocals: MutableList<Int?> = mutableListOf()
     val arguments: MutableList<Int> = mutableListOf()
-    repeat(instruction.arity) {
+    repeat(arity) {
       arguments.add(pop())
     }
     arguments.reverse()
@@ -106,6 +122,6 @@ class Machine {
     arguments.forEachIndexed { index: Int, argument: Int ->
       storeLocal(callLocals, index, argument)
     }
-    runWithLocals(function.instructions, callLocals)
+    return callLocals
   }
 }

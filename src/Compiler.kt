@@ -6,8 +6,21 @@ class Compiler(val shouldLog: Boolean = true) {
     var isFunctionBody: Boolean = false,
   )
 
-  private val functionParameters: MutableMap<String, List<String>> = mutableMapOf()
-  private val functions: MutableMap<String, FunctionDefinition> = mutableMapOf()
+  private data class FunctionSignature(
+    val parameters: List<String>,
+    var address: Int = -1,
+  )
+
+
+  private data class PendingFunctionCall(
+    val name: String,
+    val instructionIndex: Int, 
+    val arity: Int,
+  )
+
+  private val functionSignatures: MutableMap<String, FunctionSignature> = mutableMapOf()
+  private val pendingFunctionCalls: MutableList<PendingFunctionCall> = mutableListOf()
+
 
   fun log(stmt: String) {
     if (shouldLog) {
@@ -19,7 +32,7 @@ class Compiler(val shouldLog: Boolean = true) {
     log("Top level compile function called")
     val mainContext = LocalContext()
     val instructions: MutableList<Instruction> = mutableListOf()
-
+    instructions.add(Instruction.Jump(999))
     // Register function signature
     statements.forEach { statement: Stmt ->
       if (statement is Stmt.FunctionDeclaration) {
@@ -30,24 +43,38 @@ class Compiler(val shouldLog: Boolean = true) {
     // Parse function bodies
     statements.forEach { statement: Stmt ->
       if (statement is Stmt.FunctionDeclaration) {
-        emitFunctionDeclaration(statement)
+        setFunctionAddress(statement.name, instructions.size)
+        emitFunctionDeclaration(statement, instructions)
       }
     }
 
+    instructions[0] = Instruction.Jump(instructions.size)
     statements.forEach { statement: Stmt -> 
       if (statement !is Stmt.FunctionDeclaration) {
         emit(statement, instructions, mainContext) 
       }
     }
-    return CompileResult(instructions, functions.toMap())
+    patchFunctionCalls(instructions)
+    return CompileResult(instructions)
   }
 
-  private fun emitFunctionDeclaration(stmt: Stmt.FunctionDeclaration) {
+  private fun patchFunctionCalls(instructions: MutableList<Instruction>) {
+    pendingFunctionCalls.forEach { pendingCall: PendingFunctionCall ->
+      val signature: FunctionSignature = functionSignatures[pendingCall.name] ?: error("Unreachable")
+      instructions[pendingCall.instructionIndex] = Instruction.CallFunction(signature.address, pendingCall.arity)
+    }
+  }
+
+  private fun setFunctionAddress(name: String, address: Int) {
+    val signature: FunctionSignature = functionSignatures[name] ?:  error("shouldnt be possible")
+    signature.address = address
+  }
+
+  private fun emitFunctionDeclaration(stmt: Stmt.FunctionDeclaration, instructions: MutableList<Instruction>) {
     if (stmt.body.lastOrNull() !is Stmt.ReturnStmt) {
       error("Functions need to end with a return statement.")
     }
 
-      val functionInstructions: MutableList<Instruction> = mutableListOf()
       val functionContext = LocalContext(isFunctionBody = true)
       stmt.parameters.forEach { parameter: String ->
           if (functionContext.locals.containsKey(parameter)) {
@@ -58,17 +85,12 @@ class Compiler(val shouldLog: Boolean = true) {
           functionContext.locals[parameter] = slot
       }
       stmt.body.forEach { bodyStatement: Stmt -> 
-        emit(bodyStatement, functionInstructions, functionContext)
+        emit(bodyStatement, instructions, functionContext)
       }
-      functions[stmt.name] = FunctionDefinition(
-          name = stmt.name,
-          parameters = stmt.parameters,
-          instructions = functionInstructions
-      )
   }
 
   private fun registerSignature(stmt: Stmt.FunctionDeclaration) {
-    if (functionParameters.containsKey(stmt.name)) {
+    if (functionSignatures.containsKey(stmt.name)) {
       error("Duplicate function declaration")
     }
     val seenParameters: MutableSet<String> = mutableSetOf()
@@ -77,7 +99,7 @@ class Compiler(val shouldLog: Boolean = true) {
         error("Duplicate param definition in function")
       }
     }
-    functionParameters[stmt.name] = stmt.parameters
+    functionSignatures[stmt.name] = FunctionSignature(stmt.parameters)
   }
 
 
@@ -163,14 +185,19 @@ class Compiler(val shouldLog: Boolean = true) {
         instructions.add(Instruction.LoadLocal(slot))
       }
       is Expr.FunctionCall -> {
-        val parameters: List<String> = functionParameters[expr.name] ?: error("Calling unknown function")
-        if (parameters.size != expr.arguments.size) {
+        val signature: FunctionSignature = functionSignatures[expr.name] ?: error("Calling unknown function")
+        if (signature.parameters.size != expr.arguments.size) {
           error("Function expected a different number of args than it received")
         }
         expr.arguments.forEach { argument: Expr -> 
           emit(argument, instructions, context)
         }
-        instructions.add(Instruction.CallFunction(expr.name, expr.arguments.size))
+        if (signature.address > 0) {
+          instructions.add(Instruction.CallFunction(signature.address, expr.arguments.size))
+        } else {
+          pendingFunctionCalls.add(PendingFunctionCall(expr.name, instructions.size, expr.arguments.size))
+          instructions.add(Instruction.CallFunction(999, 999))
+        }
       }
     }
 

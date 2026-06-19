@@ -5,13 +5,20 @@ fun main(args: Array<String>) {
     //val source: String = "let x = 5*2; update x to x * 2; update x to x + 1; x;"
     //val source: String = "let x = 9; if (x < 5) { update x to x + 10; let y = 5; }; x+y;"
     val source: String = """
-    fun add(a, b) {
-      let y=  a + b;
-      return y;
+    fun bump(n) {
+      let x = n + 1;
+      if (x > 5) {
+        update x to x * 2;
+      };
+      return x;
     }
-    let x = invoke add(invoke add(1,1), invoke add(4,4));
-    x;
-    y;
+    let a = invoke bump(5);
+    let b = invoke bump(a);  
+    update b to b + invoke bump(1);
+    if (b > 20) {
+      update b to b - a;
+    };
+    b;
     """
     println("Source = $source")
     println("====")
@@ -24,16 +31,10 @@ fun main(args: Array<String>) {
 
 
     val result: CompileResult = Compiler(shouldLog = false).compile(program)
-    println("=========Function Bodies====")
-    result.functions.forEach { name: String, function: FunctionDefinition ->
-      println("Function $name(${function.parameters.joinToString(",")})")
-      function.instructions.forEachIndexed { index: Int,instruction: Instruction -> println(" $index: $instruction")}
-
-    }
     println("=========")
-    result.instructions.forEach { instruction: Instruction -> println(instruction) }
+    result.instructions.forEachIndexed { index: Int, instruction: Instruction  -> println("[$index]$instruction") }
 
-    val finalStack: List<Int> = Machine().run(result.instructions, result.functions)
+    val finalStack: List<Int> = Machine().run(result.instructions)
     println("=========")
     println("Final stack = $finalStack")
 }

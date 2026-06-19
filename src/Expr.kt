@@ -6,4 +6,5 @@ sealed class Expr {
     val right: Expr,
   ) : Expr()
   data class Variable(val name: String): Expr()
+  data class FunctionCall(val name: String, val arguments: List<Expr>): Expr()
 }

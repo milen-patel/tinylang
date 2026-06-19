@@ -2,13 +2,26 @@
  * cexpression -> expression (("<" | ">") expression)?
  * expression -> term ('+' | '-' term)*
  * term -> factor ('*' | '/' factor)*
- * factor -> integer | '(' expression ')' | identifier
+ * factor -> integer | '(' expression ')' | identifier | invocation
+ *
+ * invocation -> "invoke" identifier "(" params? ")"
+ * params -> expression ("," expression)*
  *
  * program -> statement* 
- * statement ->  "let" identifier "=" expression ";" | 
- *                cexpression ";" |
- *                "update" identifier "to" expression ";" | 
- *                "if" "(" cexpression ")" "{" statement* "}" ";"
+ * statement ->  variableDeclarationStatement | 
+ *                expressionStatement | 
+ *                variableUpdateStatement | 
+ *                ifStatement
+ *                functionDeclarationStatement
+ *                returnStatement 
+ * returnStatement -> "return" cexpression ";"
+ * functionDeclarationStatement -> "fun" identifier "(" args? ")" "{" statement* "}"
+ * variableDeclarationStatement -> "let" identifier "=" expression ";" 
+ * expressionStatement ->               cexpression ";"
+ * variableUpdateStatement ->                "update" identifier "to" expression ";" 
+ * ifStatement ->"if" "(" cexpression ")" "{" statement* "}" ";"
+ * args -> identifier ("," identifier)*
+ *
  * identifier -> [a-z][a-z]*
  *
  * Start symbol = statement
@@ -27,7 +40,7 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     log("parse() Top level public parse function called")
     val statements: MutableList<Stmt> = mutableListOf()
     while (!isAtEnd()) {
-      statements.add(parseStatement())
+      statements.add(parseTopLevelStatement())
     }
 
     log("parse() done parsing expression, verifying EOF exists")
@@ -36,7 +49,43 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     return statements
   }
 
+  private fun parseTopLevelStatement() :Stmt {
+    if (match(TokenType.FUN)) {
+      return parseFunctionDeclaration()
+    }
+    return parseStatement()
+  }
+  
+  private fun parseFunctionDeclaration(): Stmt {
+    val name: String = consume(TokenType.IDENTIFIER, "Function needs a name").literal
+    consume(TokenType.OPEN_PARENTHESIS, "Expected ( in function definition")
+    val parameters: MutableList<String> = mutableListOf()
+    while (!check(TokenType.CLOSE_PARENTHESIS)) {
+      parameters.add(consume(TokenType.IDENTIFIER, "Expected identifier").literal)
+      while (match(TokenType.COMMA)) {
+        parameters.add(consume(TokenType.IDENTIFIER, "Expected identifier").literal)
+      }
+    }
+    consume(TokenType.CLOSE_PARENTHESIS, "Expected ) in function definition")
+    consume(TokenType.OPEN_BRACE, "Expected {")
+    val body: MutableList<Stmt> = mutableListOf()
+    while(!check(TokenType.CLOSE_BRACE) && !isAtEnd()) {
+      body.add(parseStatement())
+    }
+    consume(TokenType.CLOSE_BRACE, "Expected }")
+    return Stmt.FunctionDeclaration(name, parameters, body)
+  }
+
+  private fun parseReturnStatement(): Stmt {
+      val value : Expr = parseCExpression()
+      consume(TokenType.SEMICOLON, "Expected ;")
+      return Stmt.ReturnStmt(value)
+  }
+  
   private fun parseStatement(): Stmt {
+    if (match(TokenType.RETURN)) {
+      return parseReturnStatement()
+    }
     if (match(TokenType.LET)) {
       return parseVarDeclaration()
     }
@@ -144,6 +193,21 @@ class Parser(private val tokens: List<Token>, private val shouldLog: Boolean) {
     // Case 3: identifier
     if (match(TokenType.IDENTIFIER)) {
       return Expr.Variable(previous().literal)
+    }
+
+    // Case 4: Function invocation
+    if (match(TokenType.INVOKE)) {
+      val name: String = consume(TokenType.IDENTIFIER, "Expected identifier").literal
+      consume(TokenType.OPEN_PARENTHESIS, "Expected (")
+      val args: MutableList<Expr> = mutableListOf()
+      while(!check(TokenType.CLOSE_PARENTHESIS)) {
+        args.add(parseCExpression())
+        while (match(TokenType.COMMA)) {
+          args.add(parseCExpression())
+        }
+      }
+      consume(TokenType.CLOSE_PARENTHESIS, "Expected )")
+      return Expr.FunctionCall(name, args)
     }
 
     error("Unable to parse factor, expected a number or open parenthesis")

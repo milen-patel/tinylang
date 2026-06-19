@@ -21,4 +21,8 @@ sealed class Instruction {
     data class LoadLocal(val slot: Int): Instruction()
     data class StoreLocal(val slot: Int): Instruction()
     data class JumpIfFalse(val target: Int): Instruction()
+    data class CallFunction(val name: String, val arity: Int): Instruction()
+    object Return : Instruction() {
+        override fun toString(): String = "Return"
+    }
 }

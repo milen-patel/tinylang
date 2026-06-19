@@ -43,7 +43,13 @@ class Lexer(val input: String) {
         advance()
     }
     val literal: String = input.substring(startingPosition, currentPosition)
-    if (literal == "if") {
+    if (literal == "fun") {
+      tokens.add(Token(TokenType.FUN))
+    } else if (literal == "invoke") {
+      tokens.add(Token(TokenType.INVOKE))
+    } else if (literal == "return") {
+      tokens.add(Token(TokenType.RETURN))
+    } else if (literal == "if") {
       tokens.add(Token(TokenType.IF))
     } else if (literal == "let") {
       tokens.add(Token(TokenType.LET))
@@ -58,7 +64,9 @@ class Lexer(val input: String) {
 
   private fun scanNextToken() {
     val currentCharacter: Char = advance()
-    if (currentCharacter == '{') {
+    if (currentCharacter == ',') {
+      tokens.add(Token(TokenType.COMMA))
+    } else if (currentCharacter == '{') {
       tokens.add(Token(TokenType.OPEN_BRACE))
     } else if (currentCharacter == '}') {
       tokens.add(Token(TokenType.CLOSE_BRACE))

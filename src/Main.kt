@@ -3,7 +3,16 @@ fun main(args: Array<String>) {
     //val source : String = "+++++";
     //val source: String = "1+2+3+4"
     //val source: String = "let x = 5*2; update x to x * 2; update x to x + 1; x;"
-    val source: String = "let x = 9; if (x < 5) { update x to x + 10; let y = 5; }; x+y;"
+    //val source: String = "let x = 9; if (x < 5) { update x to x + 10; let y = 5; }; x+y;"
+    val source: String = """
+    fun add(a, b) {
+      let y=  a + b;
+      return y;
+    }
+    let x = invoke add(invoke add(1,1), invoke add(4,4));
+    x;
+    y;
+    """
     println("Source = $source")
     println("====")
 
@@ -14,11 +23,17 @@ fun main(args: Array<String>) {
     program.forEach { currStatement: Stmt -> prettyPrint(currStatement, 0)}
 
 
-    val instructions: List<Instruction> = Compiler(shouldLog = false).compile(program)
-    println("=========")
-    instructions.forEach { instruction: Instruction -> println(instruction) }
+    val result: CompileResult = Compiler(shouldLog = false).compile(program)
+    println("=========Function Bodies====")
+    result.functions.forEach { name: String, function: FunctionDefinition ->
+      println("Function $name(${function.parameters.joinToString(",")})")
+      function.instructions.forEachIndexed { index: Int,instruction: Instruction -> println(" $index: $instruction")}
 
-    val finalStack: List<Int> = Machine().run(instructions)
+    }
+    println("=========")
+    result.instructions.forEach { instruction: Instruction -> println(instruction) }
+
+    val finalStack: List<Int> = Machine().run(result.instructions, result.functions)
     println("=========")
     println("Final stack = $finalStack")
 }
@@ -46,6 +61,17 @@ fun prettyPrint(stmt: Stmt, indent: Int) {
       println("${padding} Body")
       stmt.body.forEach { bodyItem: Stmt -> prettyPrint(bodyItem, indent + 2) }
     }
+    is Stmt.FunctionDeclaration -> {
+      println("${padding}FunctionDeclaration named ${stmt.name}")
+      println("${padding}Parameters:")
+      stmt.parameters.forEach { p: String -> println("${padding} $p")}
+      println("${padding}Body:")
+      stmt.body.forEach {item: Stmt -> prettyPrint(item, indent + 2)}
+    }
+    is Stmt.ReturnStmt -> {
+      println("${padding}ReturnStmt")
+      prettyPrint(stmt.value, indent + 1)
+    }
   }
 } 
 
@@ -62,6 +88,11 @@ fun prettyPrint(expr: Expr, indent: Int) {
     }
     is Expr.Variable -> {
       println("${padding}Variable named ${expr.name}")
+    }
+    is Expr.FunctionCall -> {
+      println("${padding} FunctionCall to ${expr.name}")
+      println("${padding} Args:")
+      expr.arguments.forEach { currArg: Expr -> prettyPrint(currArg, indent + 2) }
     }
   }
 }

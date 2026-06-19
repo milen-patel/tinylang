@@ -17,7 +17,11 @@ enum class TokenType {
   GREATER_THAN,
   OPEN_BRACE,
   CLOSE_BRACE,
-  IF
+  IF,
+  FUN,
+  COMMA,
+  RETURN,
+  INVOKE
 }
 
 data class Token(

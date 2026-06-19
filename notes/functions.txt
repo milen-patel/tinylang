@@ -1,0 +1,22 @@
+fun name(parameter1, parameter2, etc.) { 
+  statements*
+  return expression;
+}
+
+let x = 5;
+fun add(a, b) {
+  if (a < 0) {
+      return 50;
+    }
+  let x = a + b;
+    return x + b;
+}
+
+invoke functionname(arg1, arg2)
+let x = invoke add(1*5, 5)
+
+
+fun otherfunc(a) {
+    return a + invoke add(a,a);
+}
+
